@@ -1,7 +1,7 @@
-import logo from './logo.svg';
+import logo2 from './logo2.png'
 
 export const assets = {
-    logo,
+    logo2,
 };
 
 export const appPlans = [
