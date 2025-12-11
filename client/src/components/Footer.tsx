@@ -1,0 +1,11 @@
+
+
+const Footer = () => {
+  return (
+    <div className='text-center py-4 text-gray-400 text-sm border-t border-gray-800 mt-2'>
+    <p>Copyright © 2025 BuildGen - Abhishek Roy</p>
+    </div>
+  )
+}
+
+export default Footer
