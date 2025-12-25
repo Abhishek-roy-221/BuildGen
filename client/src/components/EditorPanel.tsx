@@ -26,7 +26,7 @@ const EditorPanel = ({ selectedElement, onUpdate, onClose }: EditorPanelProps) =
         setValues(selectedElement)
     }, [selectedElement])
 
-    if (selectedElement || !values) return null
+    if (!selectedElement || !values) return null
 
     const handleChange = (field: string, value: string) => {
         const newValues = { ...values, [field]: value };
@@ -77,24 +77,40 @@ const EditorPanel = ({ selectedElement, onUpdate, onClose }: EditorPanelProps) =
                     </div>
                 </div>
                 <div className='grid grid-cols-2 gap-3'>
-                     <div>
+                    <div>
                         <label className='block text-xs font-medium text-gray-500 mb-1'>Font Size</label>
                         <input type='text' value={values.styles.fontSize} onChange={(e) => handleStyleChange('fontSize', e.target.value)}
                             className='w-full text-sm p-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none min-h-20' />
                     </div>
                 </div>
                 <div className='grid grid-cols-2 gap-3'>
-                    <div className='grid grid-cols-2 gap-3'>
-                     <div>
-                        <label className='block text-xs font-medium text-gray-500 mb-1'>Background</label>
-                        <input type='text' value={values.styles.backgroundColor === 'rgba(0,0,0,0)' ? '#ffffff' : values.styles.backgroundColor} onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
-                            className='w-full text-sm p-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none min-h-20' />
+                  
+                        <div>
+                            <label className='block text-xs font-medium text-gray-500 mb-1'>Background</label>
+                            <div className='flex items-center gap-2 border border-gray-400 rounded-md p-1'>
+                                <input type='color' value={values.styles.backgroundColor === 'rgba(0,0,0,0)' ? '#ffffff' : values.styles.backgroundColor} onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
+                                className='w-6 h-6 cursor-pointer' />
+                                <span className='text-xs text-gray-600 truncate'>{values.styles.backgroundColor}</span>
+
+                            </div>
+                            
+                        </div>
+
+                        <div>
+                            <label className='block text-xs font-medium text-gray-500 mb-1'>Text Color</label>
+                            <div className='flex items-center gap-2 border border-gray-400 rounded-md p-1'>
+                                <input type='color' value={values.styles.color} onChange={(e) => handleStyleChange('color', e.target.value)}
+                                className='w-6 h-6 cursor-pointer' />
+                                 <span className='text-xs text-gray-600 truncate'>{values.styles.color}</span>
+
+                            </div>
+                            
+                        </div> 
                     </div>
-                </div>
+
+               
 
             </div>
-
-        </div>
         </div>
 
 
