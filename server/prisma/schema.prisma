@@ -30,7 +30,7 @@ model User {
   accounts      Account[]
   transactions Transaction[]
 
-  @@map("user")
+  @@map("user") 
 }
 
 model WebsiteProject {
