@@ -13,6 +13,9 @@ export const auth = betterAuth({
     emailAndPassword: { 
     enabled: true, 
   }, 
+  user:{
+    deleteUser: {enabled: true}
+  },
   trustedOrigins,
   baseURL: process.env.BETTER_AUTH_URL!,
   secret:  process.env.BETTER_AUTH_SECRET!,
@@ -23,7 +26,7 @@ export const auth = betterAuth({
         attributes:{
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
-          sameSite:'none',
+          sameSite:process.env.NODE_ENV === 'production' ?'none' : 'lax',
           path:'/',
         }
       }
