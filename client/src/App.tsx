@@ -1,5 +1,5 @@
 
-import React from 'react'
+
 import { Route, Routes, useLocation } from 'react-router-dom'
 import Pricing from './pages/Pricing'
 import Projects from './pages/Projects'
@@ -9,6 +9,8 @@ import Community from './pages/Community'
 import View from './pages/View'
 import Home from './pages/Home'
 import Navbar from './components/Navbar'
+import { Toaster } from 'sonner'
+import AuthPage from './pages/auth/AuthPage'
 
 const App = () => {
 
@@ -20,6 +22,7 @@ const App = () => {
 
   return (
     <div>
+      <Toaster/>
       {!hideNavbar && <Navbar/>}
       <Routes>
         <Route path='/' element={<Home/>}/>
@@ -30,6 +33,7 @@ const App = () => {
         <Route path='preview/:projectId/:versionId' element={<Preview/>}/>
         <Route path='community' element={<Community/>}/>
         <Route path='view/:projectId' element={<View/>}/>
+         <Route path="/auth/:pathname" element={<AuthPage />} />
       </Routes>
     </div>
   )
