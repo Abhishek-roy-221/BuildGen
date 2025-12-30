@@ -210,6 +210,29 @@ export const rollbackToVersion = async (req: Request, res: Response) => {
     res.json({message: 'Version rolled back'});
   } catch (error : any) {
     console.log(error.code || error.message);
+    res.status(500).json({message: error.message});
+  }
+    
+} 
+ 
+ //Delete project
+ export const deleteProject = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    const {projectId ,versionId} = req.params;
+   
+    
+
+     await prisma.websiteProject.delete({
+        where: {id: projectId,userId},
+      
+    })
+
+
+    res.json({message: 'Project deleted succesfully'});
+  } catch (error : any) {
+    console.log(error.code || error.message);
+    res.status(500).json({message: error.message});
   }
     
 } 
