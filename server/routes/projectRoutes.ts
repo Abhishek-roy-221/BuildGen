@@ -4,7 +4,7 @@ import { deleteProject, getProjectById, getProjectPreview, getPublishedProjects,
 
 const projectRouter = express.Router();
 
-projectRouter.post('/revison/:projectId',protect,makeRevision)
+projectRouter.post('/revision/:projectId',protect,makeRevision)
 projectRouter.put('/save/:projectId',protect,saveProjectCode)
 projectRouter.get('/rollback/:projectId/:versionId',protect,rollbackToVersion)
 projectRouter.delete('/:projectId',protect,deleteProject)

@@ -91,7 +91,7 @@ Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3
 `
                 },{
                     role: 'user',
-                    content: 'initial_prompt'
+                    content: initial_prompt
                 }
             ]
         })

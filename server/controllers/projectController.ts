@@ -115,8 +115,8 @@ Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
                     `
                 }, {
                     role: 'user',
-                    content: `Here is the current website code: "${currentProject.current_code
-                        }" The user wants this change: "${enhancedPrompt}" `
+                    content: `Here is the current website code: ${currentProject.current_code
+                        }" The user wants this change: ${enhancedPrompt} `
                 }
             ]
         })
