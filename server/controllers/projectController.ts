@@ -29,16 +29,16 @@ export const makeRevision = async (req: Request, res: Response) => {
         }
 
         const currentProject = await prisma.websiteProject.findUnique({
-            where: {id: projectId , userId},
-            include: {versions: true}
+            where: { id: projectId, userId },
+            include: { versions: true }
         })
 
-        if(!currentProject){
+        if (!currentProject) {
             return res.status(404).json({ message: 'Project not found' });
         }
 
         await prisma.conversation.create({
-            data:{
+            data: {
                 role: 'user',
                 content: message,
                 projectId
@@ -46,8 +46,8 @@ export const makeRevision = async (req: Request, res: Response) => {
         })
 
         await prisma.user.update({
-            where: {id: userId},
-            data: {credits: {decrement: 5}}
+            where: { id: userId },
+            data: { credits: { decrement: 5 } }
         })
 
         //enhance user prompt
@@ -55,7 +55,7 @@ export const makeRevision = async (req: Request, res: Response) => {
             model: 'z-ai/glm-4.5-air:free',
             messages: [
                 {
-                    role:'system',
+                    role: 'system',
                     content: `
                     You are a prompt enhancement specialist. The user wants to make changes to their website. Enhance their request to be more specific and actionable for a web developer.
 
@@ -68,9 +68,9 @@ export const makeRevision = async (req: Request, res: Response) => {
 Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
 
                     `
-                },{
-                  role: 'user',
-                  content: `User's request: "${message}"`  
+                }, {
+                    role: 'user',
+                    content: `User's request: "${message}"`
                 }
             ]
         })
@@ -98,7 +98,7 @@ Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
             model: 'z-ai/glm-4.5-air:free',
             messages: [
                 {
-                    role:'system',
+                    role: 'system',
                     content: `
                     You are an expert web developer. 
 
@@ -113,11 +113,10 @@ Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
     Apply the requested changes while maintaining the Tailwind CSS styling approach.
 
                     `
-                },{
+                }, {
                     role: 'user',
-                  content: `Here is the current website code: "${
-                    currentProject.current_code
-                  }" The user wants this change: "${enhancedPrompt}" ` 
+                    content: `Here is the current website code: "${currentProject.current_code
+                        }" The user wants this change: "${enhancedPrompt}" `
                 }
             ]
         })
@@ -125,17 +124,17 @@ Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
         const code = codeGenerationResponse.choices[0].message.content || '';
 
         const version = await prisma.version.create({
-            data:{
-                code: code.replace(/```[a-z]*\n?/gi,'')
-                .replace(/```$/g, '')
-                .trim(),
+            data: {
+                code: code.replace(/```[a-z]*\n?/gi, '')
+                    .replace(/```$/g, '')
+                    .trim(),
                 description: 'Changes made',
                 projectId
             }
         })
 
         await prisma.conversation.create({
-            data:{
+            data: {
                 role: 'assistant',
                 content: "I've made the changes to your website! You can now preview it",
                 projectId
@@ -143,22 +142,22 @@ Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
         })
 
         await prisma.websiteProject.update({
-            where: {id: projectId},
-            data:{
-                current_code: code.replace(/```[a-z]*\n?/gi,'')
-                .replace(/```$/g, '')
-                .trim(),
+            where: { id: projectId },
+            data: {
+                current_code: code.replace(/```[a-z]*\n?/gi, '')
+                    .replace(/```$/g, '')
+                    .trim(),
                 current_version_index: version.id
             }
         })
 
 
 
-            res.json({message: 'Changes made successfully'})
+        res.json({ message: 'Changes made successfully' })
     } catch (error: any) {
         await prisma.user.update({
-            where: {id: userId},
-            data: {credits: {increment: 5}}
+            where: { id: userId },
+            data: { credits: { increment: 5 } }
         })
 
         console.log(error.code || error.message);
@@ -168,71 +167,170 @@ Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
 
 //fn to Rollback 
 export const rollbackToVersion = async (req: Request, res: Response) => {
-  try {
-    const userId = req.userId;
-    if(!userId){
-        return res.status(401).json({message: 'Unauthorized'});
-    }
-
-    const {projectId ,versionId} = req.params;
-
-    const project = await prisma.websiteProject.findUnique({
-        where: {id: projectId,userId},
-        include: {versions: true}
-    })
-
-    if(!project){
-        return res.status(404).json({message: 'Project not found'});
-    }
-
-    const version = project.versions.find((version)=>version.id === versionId);
-
-    if(!version){
-        return res.status(404).json({message: 'Version not found'});
-    }
-
-    await prisma.websiteProject.update({
-        where: {id: projectId ,userId},
-        data: {
-            current_code: version.code,
-            current_version_index: version.id
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
         }
-    })
 
-    await prisma.conversation.create({
-        data: {
-            role: 'assistant',
-            content: "I've rolled back your website to selected version . You can preview it",
-            projectId
+        const { projectId, versionId } = req.params;
+
+        const project = await prisma.websiteProject.findUnique({
+            where: { id: projectId, userId },
+            include: { versions: true }
+        })
+
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
         }
-    })
 
-    res.json({message: 'Version rolled back'});
-  } catch (error : any) {
-    console.log(error.code || error.message);
-    res.status(500).json({message: error.message});
-  }
-    
-} 
- 
- //Delete project
- export const deleteProject = async (req: Request, res: Response) => {
-  try {
-    const userId = req.userId;
-    const {projectId ,versionId} = req.params;
-   
-    
+        const version = project.versions.find((version) => version.id === versionId);
 
-     await prisma.websiteProject.delete({
-        where: {id: projectId,userId},
-      
-    })
+        if (!version) {
+            return res.status(404).json({ message: 'Version not found' });
+        }
+
+        await prisma.websiteProject.update({
+            where: { id: projectId, userId },
+            data: {
+                current_code: version.code,
+                current_version_index: version.id
+            }
+        })
+
+        await prisma.conversation.create({
+            data: {
+                role: 'assistant',
+                content: "I've rolled back your website to selected version . You can preview it",
+                projectId
+            }
+        })
+
+        res.json({ message: 'Version rolled back' });
+    } catch (error: any) {
+        console.log(error.code || error.message);
+        res.status(500).json({ message: error.message });
+    }
+
+}
+
+//Delete project
+export const deleteProject = async (req: Request, res: Response) => {
+    try {
+        const userId = req.userId;
+        const { projectId, versionId } = req.params;
+
+        await prisma.websiteProject.delete({
+            where: { id: projectId, userId },
+
+        })
+
+        res.json({ message: 'Project deleted succesfully' });
+    } catch (error: any) {
+        console.log(error.code || error.message);
+        res.status(500).json({ message: error.message });
+    }
+}
+
+//fn for code preview
+export const getProjectPreview = async (req: Request, res: Response) => {
+    try {
+        const userId = req.userId;
+        const { projectId } = req.params;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const project = await prisma.websiteProject.findFirst({
+            where: { id: projectId, userId },
+            include: { versions: true }
+        })
+
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        res.json({ project });
+    } catch (error: any) {
+        console.log(error.code || error.message);
+        res.status(500).json({ message: error.message });
+    }
+}
+
+//get published projects
+export const getPublishedProjects = async (req: Request, res: Response) => {
+    try {
 
 
-    res.json({message: 'Project deleted succesfully'});
-  } catch (error : any) {
-    console.log(error.code || error.message);
-    res.status(500).json({message: error.message});
-  }
-    
+
+        const projects = await prisma.websiteProject.findMany({
+            where: { isPublished: true },
+            include: { user: true }
+        })
+
+        res.json({ projects });
+    } catch (error: any) {
+        console.log(error.code || error.message);
+        res.status(500).json({ message: error.message });
+    }
+}
+
+//get single project by id
+export const getProjectById = async (req: Request, res: Response) => {
+    try {
+
+        const { projectId } = req.params;
+
+
+        const project = await prisma.websiteProject.findFirst({
+            where: { id: projectId },
+
+        })
+
+        if (!project || project.isPublished === false || !project?.current_code) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        res.json({ code: project.current_code });
+    } catch (error: any) {
+        console.log(error.code || error.message);
+        res.status(500).json({ message: error.message });
+    }
+}
+
+//fn to save project
+export const saveProjectCode = async (req: Request, res: Response) => {
+    try {
+        const userId = req.userId;
+        const { projectId } = req.params;
+        const {code} = req.body;
+
+
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        if (!code) {
+            return res.status(400).json({ message: 'Code is required' });
+        }
+
+        const project = await prisma.websiteProject.findUnique({
+            where: {id: projectId, userId}
+        })
+
+        if(!project){
+             return res.status(404).json({ message: 'Project not found' });
+        }
+
+        await prisma.websiteProject.update({
+            where: {id: projectId},
+            data: {current_code: code,current_version_index : ''}
+        })
+
+        res.json({ message: 'Project saved succesfully' });
+    } catch (error: any) {
+        console.log(error.code || error.message);
+        res.status(500).json({ message: error.message });
+    }
 } 
