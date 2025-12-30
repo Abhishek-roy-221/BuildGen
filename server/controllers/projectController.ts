@@ -122,6 +122,23 @@ Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
         })
 
         const code = codeGenerationResponse.choices[0].message.content || '';
+        if(!code){
+            await prisma.conversation.create({
+            data: {
+                role: 'assistant',
+                content: "Unable to generate the code, please try again",
+                projectId
+            }
+        })
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { credits: { increment: 5 } }
+        })
+
+        return ;
+
+        }
 
         const version = await prisma.version.create({
             data: {
