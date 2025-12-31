@@ -9,30 +9,35 @@ import { stripeWebhook } from './controllers/stripeWebhook.js';
 
 const app = express();
 
-/* ============================
+/* =========================
    STRIPE WEBHOOK (FIRST)
-============================ */
+========================= */
 app.post(
   '/api/stripe',
   express.raw({ type: 'application/json' }),
   stripeWebhook
 );
 
-/* ============================
-   CORS (FIXED)
-============================ */
+/* =========================
+   CORS CONFIG
+========================= */
 const allowedOrigins = [
-  'https://buildgen.vercel.app',   // production frontend
-  'http://localhost:5173'          // local dev
+  'https://buildgen.vercel.app',
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow non-browser requests (like curl, server-to-server)
+      // Allow server-to-server / curl / SSR
       if (!origin) return callback(null, true);
 
+      // Allow production frontend
       if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // 🔥 Allow all Vercel preview deployments
+      if (origin.endsWith('.vercel.app')) {
         return callback(null, true);
       }
 
@@ -42,33 +47,33 @@ app.use(
   })
 );
 
-/* 🔥 REQUIRED: preflight support */
+// REQUIRED for preflight requests
 app.options('*', cors());
 
-/* ============================
+/* =========================
    AUTH
-============================ */
+========================= */
 app.all('/api/auth/*', toNodeHandler(auth));
 
-/* ============================
+/* =========================
    BODY PARSER
-============================ */
+========================= */
 app.use(express.json({ limit: '50mb' }));
 
-/* ============================
+/* =========================
    HEALTH CHECK
-============================ */
+========================= */
 app.get('/', (_req, res) => {
   res.send('Server is Live!');
 });
 
-/* ============================
+/* =========================
    ROUTES
-============================ */
+========================= */
 app.use('/api/user', userRouter);
 app.use('/api/project', projectRouter);
 
-/* ============================
+/* =========================
    EXPORT FOR VERCEL
-============================ */
+========================= */
 export default app;
