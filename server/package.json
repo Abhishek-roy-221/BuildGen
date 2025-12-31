@@ -1,11 +1,11 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
