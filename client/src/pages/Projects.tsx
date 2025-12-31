@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { Project } from '../types'
-import { ArrowBigDownDashIcon, EyeOffIcon, FullscreenIcon, LaptopIcon, Loader2Icon, MessageSquareIcon, SaveIcon, SmartphoneIcon, TabletIcon, XIcon } from 'lucide-react'
+import {  ArrowDownToLine, EyeOffIcon, FullscreenIcon, LaptopIcon, Loader2Icon, MessageSquareIcon, SaveIcon, SmartphoneIcon, TabletIcon, XIcon } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import ProjectPreview, { type ProjectPreviewRef } from '../components/ProjectPreview'
 import api from '@/config/axios'
@@ -145,7 +145,7 @@ try {
             <FullscreenIcon size={16} /> Preview
           </Link>
           <button onClick={downloadCode} className='bg-linear-to-br from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white px-3.5 py-1 flex items-center gap-2 rounded sm:rounded-sm transition-colors'>
-            <ArrowBigDownDashIcon size={16} /> Download
+            <ArrowDownToLine size={16} /> Download
           </button>
           <button onClick={togglePublish} className='bg-linear-to-br from-indigo-700 to-indigo-600 hover:from-indigo-600 hover:to-indigo-500 text-white px-3.5 py-1 flex items-center gap-2 rounded sm:rounded-sm transition-colors'>
             {project.isPublished ?
