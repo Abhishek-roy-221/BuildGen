@@ -9,37 +9,34 @@ import { stripeWebhook } from './controllers/stripeWebhook';
 
 const app = express();
 
-const corsOptions = {
-  origin: process.env.TRUSTED_ORIGIN?.split(',') || [],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
-
-// Stripe webhook MUST be before json middleware
+/* 🔥 Stripe webhook MUST be FIRST — no middleware before this */
 app.post(
   '/api/stripe',
   express.raw({ type: 'application/json' }),
   stripeWebhook
 );
 
-// Auth
-app.all('/api/auth/{*any}', toNodeHandler(auth));
+/* CORS */
+const corsOptions = {
+  origin: process.env.TRUSTED_ORIGIN?.split(',') || [],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
-// Body parser
+/* Auth — Express syntax */
+app.all('/api/auth/*', toNodeHandler(auth));
+
+/* JSON parser */
 app.use(express.json({ limit: '50mb' }));
 
-// Health check
-app.get('/', (req: Request, res: Response) => {
+/* Health check */
+app.get('/', (_req: Request, res: Response) => {
   res.send('Server is Live!');
 });
 
-// Routes
+/* Routes */
 app.use('/api/user', userRouter);
 app.use('/api/project', projectRouter);
 
-/**
- * ❌ DO NOT app.listen() on Vercel
- * ✅ Export app instead
- */
+/* ✅ Export app — DO NOT listen on a port */
 export default app;
