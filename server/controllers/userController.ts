@@ -297,6 +297,10 @@ export const togglePublish =  async (req: Request,res: Response) => {
 //Fn to purchase credits
 export const purchaseCredits =  async (req: Request,res: Response) => {
     
+    try {
         
+    } catch (error) {
+        
+    }    
    
 } 
