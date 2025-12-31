@@ -10,6 +10,6 @@ projectRouter.get('/rollback/:projectId/:versionId',protect,rollbackToVersion)
 projectRouter.delete('/:projectId',protect,deleteProject)
 projectRouter.get('/preview/:projectId',protect,getProjectPreview)
 projectRouter.get('/published',getPublishedProjects)
-projectRouter.post('/published/:projectId',getProjectById)
+projectRouter.get('/published/:projectId',getProjectById)
 
 export default projectRouter
