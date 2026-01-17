@@ -15,24 +15,17 @@ app.post(
   stripeWebhook
 );
 
-const allowedOrigins = [
-  'https://buildgen.vercel.app',
-];
-
 app.use(
   cors({
-    origin: (origin: string | undefined, callback: Function) => {
+    origin: (origin: string | undefined, callback) => {
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
+      // Allow ALL Vercel deployments (prod + preview)
       if (origin.endsWith('.vercel.app')) {
         return callback(null, true);
       }
 
-      return callback(new Error('Not allowed by CORS'));
+      return callback(null, false);
     },
     credentials: true,
   })
