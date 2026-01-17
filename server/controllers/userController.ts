@@ -9,7 +9,6 @@ export const getUserCredits = async (req: Request, res: Response) => {
         const userId = req.userId;
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
-
         }
 
         const user = await prisma.user.findUnique({
@@ -23,15 +22,15 @@ export const getUserCredits = async (req: Request, res: Response) => {
     }
 }
 
-//To create new project
+// To create new project
 export const createUserProject = async (req: Request, res: Response) => {
     const userId = req.userId;
+
     try {
         const { initial_prompt } = req.body;
 
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
-
         }
 
         const user = await prisma.user.findUnique({
@@ -42,10 +41,12 @@ export const createUserProject = async (req: Request, res: Response) => {
             return res.status(403).json({ message: 'add credits to create more projects' });
         }
 
-        //create new project
+        // create new project
         const project = await prisma.websiteProject.create({
             data: {
-                name: initial_prompt.length > 50 ? initial_prompt.substring(0, 47) + '...' : initial_prompt,
+                name: initial_prompt.length > 50
+                    ? initial_prompt.substring(0, 47) + '...'
+                    : initial_prompt,
                 initial_prompt,
                 userId
             }
@@ -69,41 +70,43 @@ export const createUserProject = async (req: Request, res: Response) => {
             data: { credits: { decrement: 5 } }
         })
 
+        // respond early (important for demo UX)
         res.json({ projectId: project.id })
 
-        //enhance user prompt
-
+        // 🔹 PROMPT ENHANCEMENT (FREE MODEL)
         const promptEnhanceResponse = await openai.chat.completions.create({
-            model: 'kwaipilot/kat-coder-pro:free',
+            model: 'google/gemma-7b-it:free',
             messages: [
                 {
                     role: 'system',
                     content: `
-                    You are a prompt enhancement specialist. Take the user's website request and expand it into a detailed, comprehensive prompt that will help create the best possible website.
+You are a prompt enhancement specialist. Take the user's website request and expand it into a detailed, comprehensive prompt that will help create the best possible website.
 
-    Enhance this prompt by:
-    1. Adding specific design details (layout, color scheme, typography)
-    2. Specifying key sections and features
-    3. Describing the user experience and interactions
-    4. Including modern web design best practices
-    5. Mentioning responsive design requirements
-    6. Adding any missing but important elements
+Enhance this prompt by:
+1. Adding specific design details (layout, color scheme, typography)
+2. Specifying key sections and features
+3. Describing the user experience and interactions
+4. Including modern web design best practices
+5. Mentioning responsive design requirements
+6. Adding any missing but important elements
 
-Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3 paragraphs max).
+Return ONLY the enhanced prompt, nothing else.
 `
-                }, {
+                },
+                {
                     role: 'user',
                     content: initial_prompt
                 }
             ]
         })
 
-        const enhancedPrompt = promptEnhanceResponse.choices[0].message.content;
+        const enhancedPrompt =
+            promptEnhanceResponse.choices[0].message.content || initial_prompt;
 
         await prisma.conversation.create({
             data: {
                 role: 'assistant',
-                content: `I've enchanced your prompt to: "${enhancedPrompt}"`,
+                content: `I've enhanced your prompt to: "${enhancedPrompt}"`,
                 projectId: project.id
             }
         })
@@ -116,41 +119,27 @@ Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3
             }
         })
 
-        //Generate website code
+        // 🔹 CODE GENERATION (FREE MODEL)
         const codeGenerationResponse = await openai.chat.completions.create({
-            model: 'kwaipilot/kat-coder-pro:free',
+            model: 'meta-llama/llama-3-8b-instruct:free',
             messages: [
                 {
                     role: 'system',
                     content: `
-                    You are an expert web developer. Create a complete, production-ready, single-page website based on this request: "${enhancedPrompt}"
+You are an expert web developer.
 
-    CRITICAL REQUIREMENTS:
-    - You MUST output valid HTML ONLY. 
-    - Use Tailwind CSS for ALL styling
-    - Include this EXACT script in the <head>: <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    - Use Tailwind utility classes extensively for styling, animations, and responsiveness
-    - Make it fully functional and interactive with JavaScript in <script> tag before closing </body>
-    - Use modern, beautiful design with great UX using Tailwind classes
-    - Make it responsive using Tailwind responsive classes (sm:, md:, lg:, xl:)
-    - Use Tailwind animations and transitions (animate-*, transition-*)
-    - Include all necessary meta tags
-    - Use Google Fonts CDN if needed for custom fonts
-    - Use placeholder images from https://placehold.co/600x400
-    - Use Tailwind gradient classes for beautiful backgrounds
-    - Make sure all buttons, cards, and components use Tailwind styling
-
-    CRITICAL HARD RULES:
-    1. You MUST put ALL output ONLY into message.content.
-    2. You MUST NOT place anything in "reasoning", "analysis", "reasoning_details", or any hidden fields.
-    3. You MUST NOT include internal thoughts, explanations, analysis, comments, or markdown.
-    4. Do NOT include markdown, explanations, notes, or code fences.
-
-    The HTML should be complete and ready to render as-is with Tailwind CSS.
+CRITICAL REQUIREMENTS:
+- Return ONLY valid HTML
+- Use Tailwind CSS for ALL styling
+- Include <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> in <head>
+- Include all JS inside <script> before </body>
+- No markdown, no explanations, no comments
+- Output must be a complete standalone HTML document
 `
-                }, {
+                },
+                {
                     role: 'user',
-                    content: enhancedPrompt || ''
+                    content: enhancedPrompt
                 }
             ]
         })
@@ -172,16 +161,16 @@ Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3
             })
 
             return;
-
         }
 
-        //create version of project
+        const cleanCode = code
+            .replace(/```[a-z]*\n?/gi, '')
+            .replace(/```$/g, '')
+            .trim();
 
         const version = await prisma.version.create({
             data: {
-                code: code.replace(/```[a-z]*\n?/gi, '')
-                    .replace(/```$/g, '')
-                    .trim(),
+                code: cleanCode,
                 description: 'initial version',
                 projectId: project.id
             }
@@ -190,7 +179,7 @@ Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3
         await prisma.conversation.create({
             data: {
                 role: 'assistant',
-                content: "I've created your website ! You can preview it and request any changes.",
+                content: "I've created your website! You can preview it and request changes.",
                 projectId: project.id
             }
         })
@@ -198,9 +187,7 @@ Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3
         await prisma.websiteProject.update({
             where: { id: project.id },
             data: {
-                current_code: code.replace(/```[a-z]*\n?/gi, '')
-                    .replace(/```$/g, '')
-                    .trim(),
+                current_code: cleanCode,
                 current_version_index: version.id
             }
         })
@@ -215,24 +202,20 @@ Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3
     }
 }
 
-//controller fn to get single user project
+// controller fn to get single user project
 export const getUserProject = async (req: Request, res: Response) => {
     try {
         const userId = req.userId;
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
-
         }
 
         const { projectId } = req.params;
 
-
         const project = await prisma.websiteProject.findUnique({
             where: { id: projectId, userId },
             include: {
-                conversation: {
-                    orderBy: { timestamp: 'asc' }
-                },
+                conversation: { orderBy: { timestamp: 'asc' } },
                 versions: { orderBy: { timestamp: 'asc' } }
             }
         })
@@ -244,13 +227,12 @@ export const getUserProject = async (req: Request, res: Response) => {
     }
 }
 
-// Fn to get all user projects
+// get all user projects
 export const getUserProjects = async (req: Request, res: Response) => {
     try {
         const userId = req.userId;
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
-
         }
 
         const projects = await prisma.websiteProject.findMany({
@@ -265,13 +247,12 @@ export const getUserProjects = async (req: Request, res: Response) => {
     }
 }
 
-//fn to toggle project publish
+// toggle publish
 export const togglePublish = async (req: Request, res: Response) => {
     try {
         const userId = req.userId;
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
-
         }
 
         const { projectId } = req.params;
@@ -279,6 +260,7 @@ export const togglePublish = async (req: Request, res: Response) => {
         const project = await prisma.websiteProject.findUnique({
             where: { id: projectId, userId }
         })
+
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
         }
@@ -288,7 +270,11 @@ export const togglePublish = async (req: Request, res: Response) => {
             data: { isPublished: !project.isPublished }
         })
 
-        res.json({ message: project.isPublished ? 'Project Unpublished' : 'Project Published Succesfully' })
+        res.json({
+            message: project.isPublished
+                ? 'Project Unpublished'
+                : 'Project Published Successfully'
+        })
 
     } catch (error: any) {
         console.log(error.code || error.message);
@@ -296,14 +282,14 @@ export const togglePublish = async (req: Request, res: Response) => {
     }
 }
 
-//Fn to purchase credits
+// purchase credits (unchanged)
 export const purchaseCredits = async (req: Request, res: Response) => {
-
     try {
         interface Plan {
             credits: number;
             amount: number;
         }
+
         const plans = {
             basic: { credits: 100, amount: 5 },
             pro: { credits: 400, amount: 19 },
@@ -314,8 +300,7 @@ export const purchaseCredits = async (req: Request, res: Response) => {
         const { planId } = req.body as { planId: keyof typeof plans }
         const origin = req.headers.origin as string;
 
-        const plan: Plan = plans[planId]
-
+        const plan: Plan = plans[planId];
         if (!plan) {
             return res.status(404).json({ message: 'Plan not found' });
         }
@@ -323,12 +308,11 @@ export const purchaseCredits = async (req: Request, res: Response) => {
         const transaction = await prisma.transaction.create({
             data: {
                 userId: userId!,
-                planId: req.body.planId,
+                planId,
                 amount: plan.amount,
                 credits: plan.credits
             }
         })
-
 
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
@@ -340,9 +324,9 @@ export const purchaseCredits = async (req: Request, res: Response) => {
                     price_data: {
                         currency: 'usd',
                         product_data: {
-                            name: `BuildGen -${plan.credits} credits`
+                            name: `BuildGen - ${plan.credits} credits`
                         },
-                        unit_amount: Math.floor(transaction.amount) *100
+                        unit_amount: Math.floor(transaction.amount) * 100
                     },
                     quantity: 1
                 },
@@ -352,16 +336,13 @@ export const purchaseCredits = async (req: Request, res: Response) => {
                 transactionId: transaction.id,
                 appId: 'BuildGen'
             },
-            expires_at: Math.floor(Date.now() /1000) + 30 * 60
-
+            expires_at: Math.floor(Date.now() / 1000) + 30 * 60
         });
 
-res.json({payment_link: session.url})
-
+        res.json({ payment_link: session.url })
 
     } catch (error: any) {
-console.log(error.code || error.message);
-res.status(500).json({ message: error.message});
+        console.log(error.code || error.message);
+        res.status(500).json({ message: error.message });
     }
-
-} 
+}
