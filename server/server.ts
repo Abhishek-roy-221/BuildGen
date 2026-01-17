@@ -17,20 +17,25 @@ app.post(
 
 app.use(
   cors({
-    origin: (origin: string | undefined, callback) => {
+    origin: (origin, callback) => {
+      // allow server-to-server, curl, postman
       if (!origin) return callback(null, true);
 
-      // Allow ALL Vercel deployments (prod + preview)
+      // allow ALL vercel preview + prod
       if (origin.endsWith('.vercel.app')) {
-        return callback(null, true);
+        return callback(null, origin);
       }
 
+      // block everything else
       return callback(null, false);
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
+// IMPORTANT: handle preflight before routes
 app.options('*', cors());
 
 app.all('/api/auth/*', toNodeHandler(auth));
