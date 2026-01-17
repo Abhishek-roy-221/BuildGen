@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import 'dotenv/config';
 import cors from 'cors';
 import { toNodeHandler } from 'better-auth/node';
@@ -21,7 +21,7 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: Function) => {
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -44,7 +44,7 @@ app.all('/api/auth/*', toNodeHandler(auth));
 
 app.use(express.json({ limit: '50mb' }));
 
-app.get('/', (_req, res) => {
+app.get('/', (_req: Request, res: Response) => {
   res.send('Server is Live!');
 });
 
