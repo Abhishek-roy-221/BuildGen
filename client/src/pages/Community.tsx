@@ -57,7 +57,7 @@ const Community = () => {
                   {project.current_code ? (
                     <iframe
                     srcDoc={project.current_code} className='absolute top-0 left-0 w-[1200px] h-[800px] origin-top-left pointer-events-none'
-                    sandbox='allow-scipts allow-same-origin'
+                    sandbox='allow-scripts allow-same-origin'
                     style={{transform:'scale(0.25)'}}/>
                   ): (
                     <div className='flex items-center justify-center h-full text-gray-500'>
