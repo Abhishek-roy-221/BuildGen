@@ -131,7 +131,7 @@ Return ONLY the enhanced prompt.
         // CODE GENERATION
         const codeGenerationResponse =
             await openai.chat.completions.create({
-                model: 'meta-llama/llama-3-8b-instruct:free',
+                model: 'deepseek/deepseek-v4-flash:free',
                 messages: [
                     {
                         role: 'system',
