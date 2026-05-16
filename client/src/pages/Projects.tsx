@@ -19,7 +19,7 @@ import api from '@/config/axios'
 import { toast } from 'sonner'
 import { authClient } from '@/lib/auth-client'
 
-const GENERATION_TIMEOUT = 90_000 // 90 seconds
+const GENERATION_TIMEOUT = 600_000
 
 const Projects = () => {
   const { projectId } = useParams()
@@ -114,12 +114,14 @@ const Projects = () => {
       const elapsed = Date.now() - (generationStartRef.current || 0)
 
       if (elapsed > GENERATION_TIMEOUT) {
-        clearInterval(intervalId)
-        setIsGenerating(false)
-        toast.error('Free AI model is busy. Please try again.')
-        return
-      }
+  clearInterval(intervalId)
 
+  toast.error(
+    'Generation is taking longer than expected. Try refreshing in a few minutes.'
+  )
+
+  return
+}
       fetchProject()
     }, 10_000)
 
