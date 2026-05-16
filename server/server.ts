@@ -24,6 +24,33 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
+
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // allow localhost
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // allow ALL vercel preview deployments
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+
+      return callback(new Error('CORS not allowed'));
+    },
+
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
       // allow requests without origin
       // (Postman, mobile apps, server-to-server)
       if (!origin) return callback(null, true);
