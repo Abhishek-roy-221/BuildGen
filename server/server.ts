@@ -2,6 +2,7 @@ import express, { type Request, type Response } from 'express';
 import 'dotenv/config';
 import cors from 'cors';
 import { toNodeHandler } from 'better-auth/node';
+
 import { auth } from './lib/auth.js';
 import userRouter from './routes/userRoute.js';
 import projectRouter from './routes/projectRoutes.js';
@@ -15,19 +16,23 @@ app.post(
   stripeWebhook
 );
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://buildgen.vercel.app',
+];
+
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // allow server-to-server, curl, postman
+    origin: function (origin, callback) {
+      // allow requests without origin
+      // (Postman, mobile apps, server-to-server)
       if (!origin) return callback(null, true);
 
-      // allow ALL vercel preview + prod
-      if (origin.endsWith('.vercel.app')) {
-        return callback(null, origin);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
 
-      // block everything else
-      return callback(null, false);
+      return callback(new Error('CORS not allowed'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -35,12 +40,9 @@ app.use(
   })
 );
 
-// IMPORTANT: handle preflight before routes
-app.options('*', cors());
+app.use(express.json({ limit: '50mb' }));
 
 app.all('/api/auth/*', toNodeHandler(auth));
-
-app.use(express.json({ limit: '50mb' }));
 
 app.get('/', (_req: Request, res: Response) => {
   res.send('Server is Live!');
